@@ -36,3 +36,36 @@ jobs:
       - name: Run Tests
         working-directory: code
         run: ./gradlew test
+        
+  ui-tests:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+
+      - name: Install and Run Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Start the Firebase Emulator
+        run: firbase emulators:start --only firestore &
+        working-directory: code
+
+      - name: Start Android Emulator and Run Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with: 
+          api-level: 29
+          script: ./gradlew connectedCheck
+          working-directory: code
+  
